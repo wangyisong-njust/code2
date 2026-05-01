@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot reproduction of the final delivery package.
+# One-command reproduction wrapper.
 
 set -euo pipefail
 
@@ -8,6 +8,13 @@ cd "$PROJECT_ROOT"
 
 PYTHON_BIN="${PYTHON_BIN:-python}"
 ENV_NAME="${FAULTDG_ENV_NAME:-faultdg}"
+CONFIG_PATH="${FAULTDG_CONFIG:-configs/pu_adaptive_sdae.yaml}"
+OUTPUT_ROOT="${FAULTDG_OUTPUT_ROOT:-outputs}"
+DOC_PATH="${FAULTDG_DOC_PATH:-docs/final_delivery.md}"
+DATA_ROOT="${FAULTDG_DATA_ROOT:-data/pu/ntu}"
+EXPORT_DIR="${FAULTDG_EXPORT_DIR:-}"
+AUTO_DOWNLOAD="${FAULTDG_AUTO_DOWNLOAD:-0}"
+ZIP_EXPORT="${FAULTDG_ZIP_EXPORT:-0}"
 
 if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
     echo "[error] Python executable '${PYTHON_BIN}' was not found."
@@ -31,32 +38,24 @@ if ! "${PYTHON_BIN}" -c "import torch, pandas, numpy, yaml, sklearn, scipy, matp
     fi
 fi
 
-"${PYTHON_BIN}" scripts/check_runtime.py || true
-if ! "${PYTHON_BIN}" scripts/check_runtime.py --strict --check-data >/dev/null 2>&1; then
-    echo "[error] PU dataset files are missing."
-    echo "Run: ${PYTHON_BIN} scripts/download_pu_ntu.py"
-    exit 1
+CMD=(
+    "${PYTHON_BIN}" scripts/run_delivery_pipeline.py
+    --config "${CONFIG_PATH}"
+    --output-root "${OUTPUT_ROOT}"
+    --doc "${DOC_PATH}"
+    --data-root "${DATA_ROOT}"
+)
+
+if [[ "${AUTO_DOWNLOAD}" == "1" ]]; then
+    CMD+=(--download-data)
 fi
 
-echo "=== [1/6] main 3-task benchmark (3 seeds) ==="
-"${PYTHON_BIN}" scripts/run_pu_benchmark.py --config configs/pu_adaptive_sdae.yaml
+if [[ -n "${EXPORT_DIR}" ]]; then
+    CMD+=(--export-dir "${EXPORT_DIR}")
+    if [[ "${ZIP_EXPORT}" == "1" ]]; then
+        CMD+=(--zip-export)
+    fi
+fi
 
-echo "=== [2/6] speed-shift ablation ==="
-"${PYTHON_BIN}" scripts/run_speed_ablation.py --config configs/pu_adaptive_sdae.yaml
-
-echo "=== [3/6] Module-2 disc-loss grid sweep ==="
-"${PYTHON_BIN}" scripts/run_disc_sweep.py --config configs/pu_adaptive_sdae.yaml
-
-echo "=== [4/6] full 12-pair cross-condition matrix ==="
-"${PYTHON_BIN}" scripts/run_pu_full_matrix.py --config configs/pu_adaptive_sdae.yaml --seeds 42
-
-echo "=== [5/6] multi-source DG (LOO) ==="
-"${PYTHON_BIN}" scripts/run_pu_multisource.py --config configs/pu_adaptive_sdae.yaml --mode leave-one-out --seeds 42
-
-echo "=== [6/6] paper-aligned module ablation ==="
-"${PYTHON_BIN}" scripts/run_module_ablation.py --config configs/pu_adaptive_sdae.yaml
-
-echo "=== inject numbers into docs/final_delivery.md ==="
-"${PYTHON_BIN}" scripts/refresh_final_delivery.py
-
-echo "=== DONE ==="
+echo "+ ${CMD[*]}"
+"${CMD[@]}"

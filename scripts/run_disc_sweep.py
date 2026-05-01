@@ -31,7 +31,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from faultdg.config import ensure_dir, load_config, resolve_path, save_resolved_config
+from faultdg.config import apply_runtime_overrides, ensure_dir, load_config, resolve_path, save_resolved_config
 from faultdg.data import make_loader
 from faultdg.models import build_model
 from faultdg.pu_data import build_pu_task_bundle
@@ -42,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Module-2 discriminative loss grid sweep on speed_shift.")
     parser.add_argument("--config", default="configs/pu_adaptive_sdae.yaml")
     parser.add_argument("--output-dir", default="outputs/pu_disc_sweep")
+    parser.add_argument("--data-root", default=None,
+                        help="Override data.root from the config.")
     parser.add_argument("--margins", nargs="+", type=float, default=[4.0, 8.0, 12.0, 16.0])
     parser.add_argument("--weights", nargs="+", type=float, default=[0.005, 0.02, 0.05, 0.1])
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 7])
@@ -53,6 +55,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+    apply_runtime_overrides(config, data_root=args.data_root)
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")
 

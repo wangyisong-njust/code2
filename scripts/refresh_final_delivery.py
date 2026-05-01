@@ -1,4 +1,4 @@
-"""Inject the latest numbers from outputs/ into docs/final_delivery.md.
+"""Inject the latest numbers from an output root into a final-delivery markdown file.
 
 This script does NOT rewrite the document — it only replaces the "*(数字将在跑完后填入。)*"
 placeholders with markdown tables drawn from the result CSVs. Idempotent: running
@@ -6,13 +6,14 @@ it twice in a row produces the same file.
 """
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOC = PROJECT_ROOT / "docs" / "final_delivery.md"
+DEFAULT_DOC_TEMPLATE = PROJECT_ROOT / "docs" / "final_delivery.md"
 
 # Markers wrap each auto-refreshed block.
 TAGS = {
@@ -195,32 +196,51 @@ def render_multisource(agg_path: Path) -> str:
     return "\n".join(lines + avg_block)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Refresh the numeric blocks in final_delivery.md.")
+    parser.add_argument("--output-root", default="outputs",
+                        help="Root directory that contains pu_adaptive_sdae/, pu_disc_sweep/, etc.")
+    parser.add_argument("--doc", default="docs/final_delivery.md",
+                        help="Markdown document to update.")
+    return parser.parse_args()
+
+
 def main() -> None:
-    text = DOC.read_text()
+    args = parse_args()
+    output_root = (PROJECT_ROOT / args.output_root).resolve() if not Path(args.output_root).is_absolute() else Path(args.output_root)
+    doc_path = (PROJECT_ROOT / args.doc).resolve() if not Path(args.doc).is_absolute() else Path(args.doc)
+
+    def result_path(*parts: str) -> Path:
+        return output_root.joinpath(*parts)
+
+    if not doc_path.exists():
+        doc_path.parent.mkdir(parents=True, exist_ok=True)
+        doc_path.write_text(DEFAULT_DOC_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
+    text = doc_path.read_text(encoding="utf-8")
 
     main_block = (
         "**任务级 accuracy（mean ± std，3 seeds）：**\n\n"
-        + render_main_summary(PROJECT_ROOT / "outputs/pu_adaptive_sdae/results/summary_agg.csv")
+        + render_main_summary(result_path("pu_adaptive_sdae", "results", "summary_agg.csv"))
         + "\n\n**跨任务平均（mean ± std）：**\n\n"
-        + render_average(PROJECT_ROOT / "outputs/pu_adaptive_sdae/results/average_accuracy.csv")
+        + render_average(result_path("pu_adaptive_sdae", "results", "average_accuracy.csv"))
     )
 
     noise_block = (
         "**AWGN 鲁棒性（mean ± std，3 seeds，跨任务平均）：**\n\n"
-        + render_noise(PROJECT_ROOT / "outputs/pu_adaptive_sdae/results/noise_summary_agg.csv")
+        + render_noise(result_path("pu_adaptive_sdae", "results", "noise_summary_agg.csv"))
     )
 
-    ablation_block = render_ablation(PROJECT_ROOT / "outputs/pu_speed_ablation/results/summary.csv")
+    ablation_block = render_ablation(result_path("pu_speed_ablation", "results", "summary.csv"))
 
-    sweep_block = render_sweep_best(PROJECT_ROOT / "outputs/pu_disc_sweep/results/best_config.json")
+    sweep_block = render_sweep_best(result_path("pu_disc_sweep", "results", "best_config.json"))
 
-    matrix_block = render_full_matrix(PROJECT_ROOT / "outputs/pu_full_matrix/results/summary_agg.csv")
+    matrix_block = render_full_matrix(result_path("pu_full_matrix", "results", "summary_agg.csv"))
 
-    multisrc_block = render_multisource(PROJECT_ROOT / "outputs/pu_multisource/results/summary_agg.csv")
+    multisrc_block = render_multisource(result_path("pu_multisource", "results", "summary_agg.csv"))
 
     module_ablation_block = render_module_ablation(
-        PROJECT_ROOT / "outputs/pu_module_ablation/results/summary_agg.csv",
-        PROJECT_ROOT / "outputs/pu_module_ablation/results/contribution.csv",
+        result_path("pu_module_ablation", "results", "summary_agg.csv"),
+        result_path("pu_module_ablation", "results", "contribution.csv"),
     )
 
     # Replace each tagged block with its rendered content.
@@ -231,8 +251,9 @@ def main() -> None:
     text = replace_block(text, "FULL_MATRIX", matrix_block + "\n\n**多源 DG（LOO）：**\n\n" + multisrc_block)
     text = replace_block(text, "MODULE_ABLATION", module_ablation_block)
 
-    DOC.write_text(text, encoding="utf-8")
-    print(f"updated {DOC}")
+    doc_path.parent.mkdir(parents=True, exist_ok=True)
+    doc_path.write_text(text, encoding="utf-8")
+    print(f"updated {doc_path}")
 
 
 if __name__ == "__main__":

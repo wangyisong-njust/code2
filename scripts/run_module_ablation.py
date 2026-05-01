@@ -39,7 +39,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from faultdg.adaptive import select_hidden_dims
-from faultdg.config import ensure_dir, load_config, resolve_path, save_resolved_config
+from faultdg.config import apply_runtime_overrides, ensure_dir, load_config, resolve_path, save_resolved_config
 from faultdg.data import make_loader
 from faultdg.models import build_model
 from faultdg.pu_data import build_pu_task_bundle
@@ -106,6 +106,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Per-module ablation of the 3 paper-aligned upgrades.")
     parser.add_argument("--config", default="configs/pu_adaptive_sdae.yaml")
     parser.add_argument("--output-dir", default="outputs/pu_module_ablation")
+    parser.add_argument("--data-root", default=None,
+                        help="Override data.root from the config.")
     parser.add_argument("--seeds", nargs="+", type=int, default=None)
     parser.add_argument("--tasks", nargs="+", default=None)
     parser.add_argument("--variants", nargs="+", default=None,
@@ -116,6 +118,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+    apply_runtime_overrides(config, data_root=args.data_root)
     seeds = args.seeds or list(config["experiment"].get("seeds", [42]))
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")

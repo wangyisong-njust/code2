@@ -15,7 +15,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from faultdg.adaptive import select_hidden_dims
-from faultdg.config import ensure_dir, load_config, resolve_path, save_resolved_config
+from faultdg.config import apply_runtime_overrides, ensure_dir, load_config, resolve_path, save_resolved_config
 from faultdg.data import make_loader
 from faultdg.models import build_model
 from faultdg.pu_data import build_pu_task_bundle
@@ -27,6 +27,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run ablation study for the PU speed-shift task.")
     parser.add_argument("--config", default="configs/pu_adaptive_sdae.yaml")
     parser.add_argument("--output-dir", default="outputs/pu_speed_ablation")
+    parser.add_argument("--data-root", default=None,
+                        help="Override data.root from the config.")
     return parser.parse_args()
 
 
@@ -92,6 +94,7 @@ def build_variants(base_config: dict, source_rpm: float, target_rpm: float) -> l
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+    apply_runtime_overrides(config, data_root=args.data_root)
     seed_everything(int(config["training"]["seed"]))
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")

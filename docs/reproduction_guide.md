@@ -167,13 +167,30 @@ python scripts/download_pu_ntu.py
 ### 4.1 一键复现
 
 ```bash
-bash scripts/run_all.sh
+python scripts/run_delivery_pipeline.py --download-data
 ```
 
-如果使用的环境名称不是 `faultdg`，改为：
+上面这条命令会按顺序完成：
+
+- 环境自检
+- 数据完整性检查
+- 数据缺失时自动下载
+- 6 组正式实验
+- 刷新 `docs/final_delivery.md`
+
+如果还需要直接组装不含公开数据集的交付目录，执行：
 
 ```bash
-FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
+python scripts/run_delivery_pipeline.py \
+  --download-data \
+  --export-dir deliverables/faultdg_delivery \
+  --zip-export
+```
+
+如果使用的是 shell 包装器，且环境名称不是 `faultdg`，改为：
+
+```bash
+FAULTDG_ENV_NAME=torch21new FAULTDG_AUTO_DOWNLOAD=1 bash scripts/run_all.sh
 ```
 
 ### 4.2 分步复现
@@ -198,12 +215,15 @@ python scripts/run_pu_multisource.py --config configs/pu_adaptive_sdae.yaml --mo
 python scripts/run_module_ablation.py --config configs/pu_adaptive_sdae.yaml
 
 # 刷新最终报告中的自动数字块
-python scripts/refresh_final_delivery.py
+python scripts/refresh_final_delivery.py --output-root outputs --doc docs/final_delivery.md
+
+# 组装交付目录
+python scripts/export_delivery_package.py --output-root outputs --dest deliverables/faultdg_delivery --zip
 ```
 
 ## 5. 结果目录说明
 
-交付包默认保留的是最终结果表和图：
+交付目录默认保留的是最终结果表和图：
 
 - `outputs/pu_adaptive_sdae/results/`
 - `outputs/pu_adaptive_sdae/figures/`
@@ -229,6 +249,12 @@ python scripts/refresh_final_delivery.py
 - `outputs/pu_multisource/results/summary_agg.csv`
 - `outputs/pu_module_ablation/results/summary_agg.csv`
 - `docs/final_delivery.md`
+
+如果执行了导出命令，还应当核对：
+
+- `deliverables/faultdg_delivery/MANIFEST.json`
+- `deliverables/faultdg_delivery/docs/final_delivery.md`
+- `deliverables/faultdg_delivery/outputs/pu_adaptive_sdae/results/summary_agg.csv`
 
 ## 6. 常见问题
 
@@ -281,3 +307,34 @@ python scripts/refresh_final_delivery.py
 ```bash
 FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
 ```
+
+### 6.6 想把结果输出到别的目录
+
+统一入口支持自定义输出根目录和报告路径，例如：
+
+```bash
+python scripts/run_delivery_pipeline.py \
+  --download-data \
+  --output-root reproduced_outputs \
+  --doc reproduced_docs/final_delivery.md
+```
+
+分步脚本也都支持 `--output-dir`；涉及数据位置的脚本支持 `--data-root`。
+
+### 6.7 想直接生成交付包
+
+执行：
+
+```bash
+python scripts/export_delivery_package.py \
+  --output-root outputs \
+  --dest deliverables/faultdg_delivery \
+  --zip
+```
+
+该命令会：
+
+- 复制代码、配置、说明文档和最终结果目录
+- 排除公开数据集文件
+- 排除 `checkpoints/`、`histories/`、`predictions/` 等重跑中间件
+- 生成 `MANIFEST.json`

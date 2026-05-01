@@ -7,6 +7,13 @@ python scripts/download_pu_ntu.py
 python scripts/check_runtime.py --strict --check-data
 ```
 
+如果希望把数据放到别的目录，可以显式指定：
+
+```bash
+python scripts/download_pu_ntu.py --data-root /path/to/pu_ntu
+python scripts/check_runtime.py --strict --check-data --data-root /path/to/pu_ntu
+```
+
 下载完成后，目录结构应为：
 
 ```text

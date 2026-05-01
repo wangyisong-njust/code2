@@ -10,6 +10,9 @@ venv/
 build/
 dist/
 *.egg-info/
+.faultdg_tmp/
+deliverables/
+*.zip
 outputs/*
 !outputs/pu_adaptive_sdae/
 !outputs/pu_adaptive_sdae/**

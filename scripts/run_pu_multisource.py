@@ -28,7 +28,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from faultdg.config import ensure_dir, load_config, resolve_path, save_resolved_config
+from faultdg.config import apply_runtime_overrides, ensure_dir, load_config, resolve_path, save_resolved_config
 from faultdg.data import make_loader
 from faultdg.models import build_model
 from faultdg.pu_data import build_pu_multisource_bundle, compute_class_weights
@@ -52,6 +52,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Multi-source DG on PU.")
     parser.add_argument("--config", default="configs/pu_adaptive_sdae.yaml")
     parser.add_argument("--output-dir", default="outputs/pu_multisource")
+    parser.add_argument("--data-root", default=None,
+                        help="Override data.root from the config.")
     parser.add_argument("--mode", choices=["leave-one-out", "pairs", "both"], default="leave-one-out")
     parser.add_argument("--methods", nargs="+", default=None)
     parser.add_argument("--seeds", nargs="+", type=int, default=[42])
@@ -76,6 +78,7 @@ def build_tasks(mode: str) -> list:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
+    apply_runtime_overrides(config, data_root=args.data_root)
     methods = args.methods or list(config["experiment"]["methods"])
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")

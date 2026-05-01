@@ -153,8 +153,8 @@
     "embedding_max_points": 1500
   },
   "_meta": {
-    "config_path": "/home/kaixin/yisong/code2/configs/_pu_full_matrix.generated.yaml",
-    "config_dir": "/home/kaixin/yisong/code2/configs",
-    "project_root": "/home/kaixin/yisong/code2"
+    "config_path": "configs/_pu_full_matrix.generated.yaml",
+    "config_dir": "configs",
+    "project_root": "."
   }
 }

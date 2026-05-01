@@ -13,7 +13,6 @@
 
 - 公开数据集文件
 - 训练过程中生成的大体积 checkpoint / prediction / history
-- 已废弃的中间实验目录
 
 ## 主方法 Adaptive-SDAE-3M
 
@@ -70,35 +69,45 @@ PU 工况映射（按数据集中字母字典序）：
 
 ## 环境与数据
 
-完整环境搭建、数据下载、自检和故障排查见 [`docs/reproduction_guide.md`](docs/reproduction_guide.md)。
+完整环境搭建、数据下载、自检、导出交付包和故障排查见 [`docs/reproduction_guide.md`](docs/reproduction_guide.md)。
 
 最短路径如下：
 
 ```bash
 conda env create -f environment.yml
 conda activate faultdg
-python scripts/check_runtime.py
-python scripts/download_pu_ntu.py
-python scripts/check_runtime.py --strict --check-data
+python scripts/run_delivery_pipeline.py --download-data
 ```
 
 说明：
 
 - 结果是在 `Python 3.8 + torch 2.3.0` 环境下生成的。
 - 公开数据集不包含在仓库当前保留范围内，需单独下载到 `data/pu/ntu/`。
-- 如果换机器复现，先跑 `scripts/check_runtime.py`，不要直接开跑实验。
+- 如果换机器复现，先跑 `scripts/check_runtime.py` 或直接用 `scripts/run_delivery_pipeline.py --download-data`。
 - 下面所有命令默认都在仓库根目录执行。
 
 ## 一键复现
 
 ```bash
-bash scripts/run_all.sh
+python scripts/run_delivery_pipeline.py --download-data
 ```
 
-如果环境名称不是 `faultdg`，先手动激活对应环境，或显式指定：
+如果希望在跑完后直接整理出可交付目录并打包：
 
 ```bash
-FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
+python scripts/run_delivery_pipeline.py \
+  --download-data \
+  --export-dir deliverables/faultdg_delivery \
+  --zip-export
+```
+
+`bash scripts/run_all.sh` 也是同一套流程的 shell 包装器，支持通过环境变量改环境名、数据目录、输出目录和导出目录：
+
+```bash
+FAULTDG_ENV_NAME=torch21new \
+FAULTDG_AUTO_DOWNLOAD=1 \
+FAULTDG_EXPORT_DIR=deliverables/faultdg_delivery \
+bash scripts/run_all.sh
 ```
 
 ## 分步复现
@@ -122,7 +131,10 @@ python scripts/run_pu_full_matrix.py --config configs/pu_adaptive_sdae.yaml --se
 python scripts/run_pu_multisource.py --config configs/pu_adaptive_sdae.yaml --mode leave-one-out --seeds 42
 
 # 6. 把 outputs/ 下的最新数字注入 docs/final_delivery.md
-python scripts/refresh_final_delivery.py
+python scripts/refresh_final_delivery.py --output-root outputs --doc docs/final_delivery.md
+
+# 7. 组装不含公开数据集的交付目录
+python scripts/export_delivery_package.py --output-root outputs --dest deliverables/faultdg_delivery --zip
 ```
 
 ## 输出目录结构
@@ -150,7 +162,7 @@ env.json                          # python / torch / cuda / numpy 版本
 resolved_config.json
 ```
 
-如果重新执行训练脚本，`checkpoints/`、`histories/`、`predictions/` 等过程目录会自动重新生成；这些大体积目录不包含在仓库当前保留范围内。
+如果重新执行训练脚本，`checkpoints/`、`histories/`、`predictions/` 等过程目录会自动重新生成；这些大体积目录不包含在仓库当前保留范围内。使用 `scripts/export_delivery_package.py` 时也会自动排除这些目录和公开数据集文件。
 
 ## 最终交付报告
 
@@ -158,7 +170,7 @@ resolved_config.json
 
 ## 复现实操文档
 
-详细环境配置、数据下载、自检命令和常见问题处理见 [`docs/reproduction_guide.md`](docs/reproduction_guide.md)。
+详细环境配置、数据下载、自检命令、导出命令和常见问题处理见 [`docs/reproduction_guide.md`](docs/reproduction_guide.md)。
 
 ## 配置说明
 

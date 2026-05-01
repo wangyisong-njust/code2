@@ -402,7 +402,16 @@ python scripts/check_runtime.py --strict --check-data
 一键复现：
 
 ```bash
-bash scripts/run_all.sh
+python scripts/run_delivery_pipeline.py --download-data
+```
+
+如果希望在跑完后直接得到不含公开数据集的交付目录：
+
+```bash
+python scripts/run_delivery_pipeline.py \
+  --download-data \
+  --export-dir deliverables/faultdg_delivery \
+  --zip-export
 ```
 
 分步运行：
@@ -427,7 +436,10 @@ python scripts/run_pu_multisource.py --config configs/pu_adaptive_sdae.yaml --mo
 python scripts/run_module_ablation.py --config configs/pu_adaptive_sdae.yaml
 
 # 同步刷新本报告里的所有数字
-python scripts/refresh_final_delivery.py
+python scripts/refresh_final_delivery.py --output-root outputs --doc docs/final_delivery.md
+
+# 组装交付目录
+python scripts/export_delivery_package.py --output-root outputs --dest deliverables/faultdg_delivery --zip
 ```
 
 ### 13.3 交付包与重跑目录的区别

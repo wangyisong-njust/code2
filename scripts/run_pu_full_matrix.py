@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import copy
 import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -23,7 +24,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from faultdg.config import load_config
+from faultdg.config import apply_runtime_overrides, ensure_dir, load_config
 
 
 DOMAIN_KEYS = ["a", "b", "c", "d"]
@@ -33,6 +34,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run all 12 PU cross-condition pairs.")
     parser.add_argument("--config", default="configs/pu_adaptive_sdae.yaml")
     parser.add_argument("--output-dir", default="outputs/pu_full_matrix")
+    parser.add_argument("--data-root", default=None,
+                        help="Override data.root from the config.")
     parser.add_argument("--seeds", nargs="+", type=int, default=[42])
     parser.add_argument("--methods", nargs="+", default=None)
     return parser.parse_args()
@@ -41,6 +44,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     base = load_config(args.config)
+    apply_runtime_overrides(base, data_root=args.data_root)
 
     tasks = []
     for src in DOMAIN_KEYS:
@@ -57,19 +61,38 @@ def main() -> None:
     if args.methods is not None:
         materialised["experiment"]["methods"] = list(args.methods)
 
-    tmp_config = PROJECT_ROOT / "configs" / "_pu_full_matrix.generated.yaml"
-    tmp_config.parent.mkdir(parents=True, exist_ok=True)
-    tmp_config.write_text(yaml.safe_dump(materialised, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    tmp_dir = ensure_dir(PROJECT_ROOT / ".faultdg_tmp")
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        prefix="pu_full_matrix_",
+        dir=tmp_dir,
+        delete=False,
+        encoding="utf-8",
+    ) as fp:
+        tmp_config = Path(fp.name)
+        fp.write(yaml.safe_dump(materialised, sort_keys=False, allow_unicode=True))
 
-    # Delegate to the multi-seed benchmark by execing it as a script.
-    sys.argv = ["run_pu_benchmark.py", "--config", str(tmp_config)]
-    if args.methods is not None:
-        sys.argv.extend(["--methods", *args.methods])
-    sys.argv.extend(["--seeds", *map(str, args.seeds)])
+    try:
+        # Delegate to the multi-seed benchmark by execing it as a script.
+        sys.argv = [
+            "run_pu_benchmark.py",
+            "--config",
+            str(tmp_config),
+            "--output-dir",
+            str(args.output_dir),
+        ]
+        if args.data_root is not None:
+            sys.argv.extend(["--data-root", str(args.data_root)])
+        if args.methods is not None:
+            sys.argv.extend(["--methods", *args.methods])
+        sys.argv.extend(["--seeds", *map(str, args.seeds)])
 
-    import runpy
+        import runpy
 
-    runpy.run_path(str(PROJECT_ROOT / "scripts" / "run_pu_benchmark.py"), run_name="__main__")
+        runpy.run_path(str(PROJECT_ROOT / "scripts" / "run_pu_benchmark.py"), run_name="__main__")
+    finally:
+        tmp_config.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
