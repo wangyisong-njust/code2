@@ -1,0 +1,11 @@
+{
+  "best_margin": 8.0,
+  "best_weight": 0.005,
+  "best_accuracy_mean": 0.561217008797654,
+  "best_accuracy_std": 0.03680687790633789,
+  "task": "d->a",
+  "seeds": [
+    42,
+    7
+  ]
+}

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "faultdg"
+version = "0.1.0"
+description = "Cross-condition fault classification benchmark with SDAE-based domain generalization."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+  "matplotlib>=3.5",
+  "numpy>=1.21",
+  "pandas>=1.3",
+  "PyYAML>=5.4",
+  "scikit-learn>=1.0",
+  "scipy>=1.7",
+  "seaborn>=0.11",
+  "torch>=1.13",
+  "tqdm>=4.60",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
