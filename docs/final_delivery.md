@@ -178,19 +178,19 @@
 <!-- AUTO:ABLATION:start -->
 | variant | accuracy |
 | --- | ---: |
-| fusion_adaptive_disc | 0.5183 |
-| fusion_adaptive_speed | 0.4908 |
+| fusion_adaptive_disc_speed | 0.5451 |
+| fusion_adaptive_disc | 0.5257 |
+| fusion_adaptive_speed | 0.4872 |
 | fusion_adaptive | 0.4446 |
-| fusion_adaptive_disc_speed | 0.4183 |
 | fusion_fixed | 0.4106 |
 <!-- AUTO:ABLATION:end -->
 
 单 seed、保守速度缩放系数下，5 个变体给出的结论是：
 
 1. `fusion_fixed → fusion_adaptive`：**+0.0341**，说明结构搜索本身能带来稳定增益。
-2. `fusion_adaptive → fusion_adaptive_disc`：**+0.0737**，分类导向判别损失是这组消融里最明显的收益来源。
-3. `fusion_adaptive → fusion_adaptive_speed`：**+0.0462**，单开速度缩放增强也有帮助。
-4. `fusion_adaptive_disc → fusion_adaptive_disc_speed`：**−0.1001**，说明在这组保守设定下，`disc + speed_aug` 直接叠加并不单调，存在明显耦合冲突。
+2. `fusion_adaptive → fusion_adaptive_disc`：**+0.0810**，分类导向判别损失仍然是这组消融里最明显的收益来源。
+3. `fusion_adaptive → fusion_adaptive_speed`：**+0.0425**，单开速度缩放增强也有帮助。
+4. `fusion_adaptive_disc → fusion_adaptive_disc_speed`：**+0.0194**，在当前复现实验下，判别损失与保守速度缩放的叠加是正向的，联合变体取得 5 个变体中的最高准确率。
 
 > 说明 1：该消融是**单 seed + 保守 speed scale** 的模块级趋势验证。这里速度缩放采用 `sqrt(1500/900) ≈ 1.291`，目的是避免单任务单次实验被过激缩放扰乱。
 > 说明 2：正式主表使用真实比例 `1500/900 ≈ 1.667`、完整的 3-seed 评测和当前默认训练配方，主方法在 `speed_shift` 上的最终准确率是 **`0.6064 ± 0.0050`**（详见 §6），因此这里的 5 变体结果应解读为"模块趋势检查"，而不是主表数值的直接替代。
@@ -203,10 +203,10 @@
 - 用途：定位 Module-2 的最佳超参组合，并验证主方法选取的默认值 `(margin=8, weight=0.02)` 是否处在合理区域。
 
 <!-- AUTO:SWEEP:start -->
-- 最佳 `(margin=8.0, weight=0.005)`，mean accuracy = 0.5612 ± 0.0368 on `d->a`，seeds = `[42, 7]`。
+- 最佳 `(margin=12.0, weight=0.02)`，mean accuracy = 0.6133 ± 0.0088 on `d->a`，seeds = `[42, 7]`。
 <!-- AUTO:SWEEP:end -->
 
-需要注意，`run_disc_sweep.py` 为了隔离 Module-2 的影响，**显式关闭了 adaptive structure search**，因此它和 §6 主表不是一套完全同构的训练配方。扫描表明在这个"固定结构、仅扫判别损失超参"的子问题上，`(margin=8, weight=0.005)` 的 2-seed 均值最高（`0.5612 ± 0.0368`）；而正式主表在完整默认配方下使用 `(margin=8, weight=0.02)`，`speed_shift` 达到 **`0.6064 ± 0.0050`**。因此这里把 `weight=0.005` 作为单任务可选调优档位保留在 `outputs/pu_disc_sweep/results/best_config.json`，主交付配置仍维持 `0.02`。
+需要注意，`run_disc_sweep.py` 为了隔离 Module-2 的影响，**显式关闭了 adaptive structure search**，因此它和 §6 主表不是一套完全同构的训练配方。当前重跑结果表明，在这个“固定结构、仅扫判别损失超参”的子问题上，最佳组合是 **`(margin=12, weight=0.02)`**，2-seed 均值 **`0.6133 ± 0.0088`**。这说明当前主配置里的 `weight=0.02` 处在稳定的高值区，`margin` 则在固定结构场景下更偏向 12 而不是 8。正式主表仍沿用统一交付配置 `(margin=8, weight=0.02)`，对应 `speed_shift` 结果是 **`0.6064 ± 0.0050`**；如果后续只针对 `d → a` 做单任务进一步调优，`margin=12` 是优先尝试的候选值。
 
 ## 10. 12 对全跨工况矩阵 + 多源域泛化
 
@@ -389,6 +389,8 @@ python scripts/check_runtime.py
 ```bash
 FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
 ```
+
+如果需要手动指定 GPU，可以在命令前加 `CUDA_VISIBLE_DEVICES=<gpu_id>`。脚本本身不依赖固定 GPU 数量，单卡即可运行。
 
 ### 13.2 下载数据
 

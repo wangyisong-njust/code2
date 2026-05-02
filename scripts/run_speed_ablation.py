@@ -94,7 +94,7 @@ def build_variants(base_config: dict, source_rpm: float, target_rpm: float) -> l
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
-    apply_runtime_overrides(config, data_root=args.data_root)
+    apply_runtime_overrides(config, data_root=args.data_root, output_dir=args.output_dir)
     seed_everything(int(config["training"]["seed"]))
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")

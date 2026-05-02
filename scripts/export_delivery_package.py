@@ -70,18 +70,26 @@ def copy_tree(src: Path, dest: Path) -> None:
             "checkpoints",
             "histories",
             "predictions",
+            "adaptive_search",
             ".git",
             ".faultdg_tmp",
         ),
     )
 
 
+def portable_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT))
+    except Exception:
+        return str(path)
+
+
 def build_manifest(output_root: Path, dest: Path) -> dict[str, object]:
     return {
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "source_repo": str(PROJECT_ROOT),
-        "output_root": str(output_root),
-        "delivery_root": str(dest),
+        "source_repo": ".",
+        "output_root": portable_path(output_root),
+        "delivery_root": portable_path(dest),
         "result_directories": RESULT_DIRS,
         "root_files": ROOT_FILES,
         "root_dirs": ROOT_DIRS,

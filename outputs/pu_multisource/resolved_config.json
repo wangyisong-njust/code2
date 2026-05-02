@@ -1,7 +1,7 @@
 {
   "experiment": {
     "name": "pu_adaptive_sdae",
-    "output_dir": "outputs/pu_adaptive_sdae",
+    "output_dir": "outputs/pu_multisource",
     "methods": [
       "erm",
       "mixup",

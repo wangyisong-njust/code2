@@ -78,7 +78,7 @@ def build_tasks(mode: str) -> list:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
-    apply_runtime_overrides(config, data_root=args.data_root)
+    apply_runtime_overrides(config, data_root=args.data_root, output_dir=args.output_dir)
     methods = args.methods or list(config["experiment"]["methods"])
     if hasattr(torch, "set_float32_matmul_precision"):
         torch.set_float32_matmul_precision("high")

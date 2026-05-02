@@ -54,6 +54,18 @@ def _relative_or_original(root: Path, value: str | Path) -> str:
         return str(path)
 
 
+def _relativize_project_path(root: Path, value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    path = Path(value)
+    if not path.is_absolute():
+        return value
+    try:
+        return str(path.resolve().relative_to(root.resolve()))
+    except Exception:
+        return value
+
+
 def make_serializable_config(config: Dict[str, Any]) -> Dict[str, Any]:
     payload = copy.deepcopy(config)
     meta = payload.get("_meta")
@@ -61,6 +73,14 @@ def make_serializable_config(config: Dict[str, Any]) -> Dict[str, Any]:
         return payload
 
     project_root = Path(meta.get("project_root", ".")).resolve()
+    experiment = payload.get("experiment")
+    if isinstance(experiment, dict) and "output_dir" in experiment:
+        experiment["output_dir"] = _relativize_project_path(project_root, experiment.get("output_dir"))
+
+    data = payload.get("data")
+    if isinstance(data, dict) and "root" in data:
+        data["root"] = _relativize_project_path(project_root, data.get("root"))
+
     payload["_meta"] = {
         "config_path": _relative_or_original(project_root, meta.get("config_path", "")),
         "config_dir": _relative_or_original(project_root, meta.get("config_dir", "")),

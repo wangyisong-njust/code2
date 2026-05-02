@@ -1,7 +1,7 @@
 {
   "experiment": {
     "name": "pu_adaptive_sdae",
-    "output_dir": "outputs/pu_adaptive_sdae",
+    "output_dir": "outputs/pu_speed_ablation",
     "methods": [
       "erm",
       "mixup",
@@ -85,8 +85,8 @@
       "discriminative_margin": 8.0,
       "discriminative_intra_weight": 1.0,
       "discriminative_inter_weight": 1.0,
-      "discriminative_squared": true,
-      "discriminative_adaptive": true,
+      "discriminative_squared": false,
+      "discriminative_adaptive": false,
       "pretrain_sparsity_rho": 0.05,
       "pretrain_sparsity_weight": 0.001,
       "speed_aug_weight": 0.2,

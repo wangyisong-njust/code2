@@ -16,7 +16,7 @@ pwd
 - Python：`3.8`
 - PyTorch：`2.3.x`
 - 操作系统：Linux
-- 显卡：有 CUDA 更好；无 CUDA 也能运行，但全量实验会明显变慢
+- 显卡：单卡 CUDA 即可；无 CUDA 也能运行，但全量实验会明显变慢
 
 ### 1.2 用 conda 创建环境
 
@@ -39,7 +39,7 @@ pip install -e . --no-deps
 pip install numpy pandas pyyaml scikit-learn scipy matplotlib seaborn tqdm
 ```
 
-如果需要 GPU 版 PyTorch，可按本机 CUDA 版本单独安装官方对应包；本次结果是在 `torch 2.3.0` 环境下生成的。
+如果需要 GPU 版 PyTorch，可按本机 CUDA 版本单独安装官方对应包；本次结果是在 `torch 2.3.0` 环境下生成的。脚本默认只使用一个可见 GPU，不依赖固定的 GPU 数量。
 
 环境创建完成后，建议立即执行一次：
 
@@ -78,6 +78,14 @@ conda activate faultdg
 ```bash
 FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
 ```
+
+如果机器上有多张 GPU，而只想指定其中一张运行，可以在命令前加：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python scripts/run_delivery_pipeline.py --download-data
+```
+
+如果只有一张 GPU，或准备在 CPU 上运行，不需要额外改代码。
 
 ## 2. 环境自检
 
@@ -315,8 +323,8 @@ FAULTDG_ENV_NAME=torch21new bash scripts/run_all.sh
 ```bash
 python scripts/run_delivery_pipeline.py \
   --download-data \
-  --output-root reproduced_outputs \
-  --doc reproduced_docs/final_delivery.md
+  --output-root outputs_rerun \
+  --doc docs/final_delivery_rerun.md
 ```
 
 分步脚本也都支持 `--output-dir`；涉及数据位置的脚本支持 `--data-root`。

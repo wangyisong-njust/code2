@@ -1,6 +1,6 @@
 variant,accuracy,best_epoch,hidden_dims,speed_scale,discriminative_weight,speed_aug_weight,speed_consistency_weight
-fusion_adaptive_disc,0.5183284457478006,10,512-256,1.0,0.02,0.0,0.0
-fusion_adaptive_speed,0.4908357771260997,10,512-256,1.2909944487358056,0.0,0.2,0.05
+fusion_adaptive_disc_speed,0.5450879765395894,8,512-256,1.2909944487358056,0.02,0.2,0.05
+fusion_adaptive_disc,0.5256598240469208,10,640-320,1.0,0.02,0.0,0.0
+fusion_adaptive_speed,0.4871700879765396,10,640-320,1.2909944487358056,0.0,0.2,0.05
 fusion_adaptive,0.4446480938416422,9,640-320,1.0,0.0,0.0,0.0
-fusion_adaptive_disc_speed,0.4182551319648094,10,512-256,1.2909944487358056,0.02,0.2,0.05
 fusion_fixed,0.41055718475073316,10,512-256,1.0,0.0,0.0,0.0

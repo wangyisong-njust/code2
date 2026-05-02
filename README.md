@@ -84,6 +84,7 @@ python scripts/run_delivery_pipeline.py --download-data
 - 结果是在 `Python 3.8 + torch 2.3.0` 环境下生成的。
 - 公开数据集不包含在仓库当前保留范围内，需单独下载到 `data/pu/ntu/`。
 - 如果换机器复现，先跑 `scripts/check_runtime.py` 或直接用 `scripts/run_delivery_pipeline.py --download-data`。
+- 脚本默认只使用一个可见 GPU，不依赖固定 GPU 数量；如果要手动指定设备，可在命令前加 `CUDA_VISIBLE_DEVICES=0`。
 - 下面所有命令默认都在仓库根目录执行。
 
 ## 一键复现
